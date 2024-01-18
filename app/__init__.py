@@ -1,10 +1,14 @@
 from fastapi import FastAPI, APIRouter
-from pymongo import MongoClient
+
+from . import config
+from .mongo import MongoManager
+
+settings = config.Settings()
+
+db = MongoManager(settings.mongo_url, settings.db_name)
+app = FastAPI()
 
 from .api.v1 import user
-
-mongo = MongoClient()
-app = FastAPI()
 
 v1 = APIRouter()
 v1.include_router(
