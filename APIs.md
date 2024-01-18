@@ -35,7 +35,7 @@
 
 # Schemes
 
-## User
+## Users
 
 ```json
 {
@@ -57,14 +57,20 @@
         {
             "id": "w4IQNUYO5JqA",
             "name": "wall_1",
-            "colour": 1048560,
-            "memos": [
-                {
-                    "id": "kLD4kXhTKBGP",
-                    "content": "Sekai wo nibunka shite\nBoku wa kakou ni narou"
-                }
-            ]
+            "colour": 1048560
         }
     ]
+}
+```
+
+## Memos
+
+```json
+{
+    "id": "kLD4kXhTKBGP",
+    "wall": "w4IQNUYO5JqA",
+    "created_at": "utc_time",
+    "edited_at": "utc_time",
+    "content": "Sekai wo nibunka shite\nBoku wa kakou ni narou"
 }
 ```
