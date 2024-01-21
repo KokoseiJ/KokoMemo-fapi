@@ -68,6 +68,7 @@
 ```json
 {
     "id": "kLD4kXhTKBGP",
+    "owner": "WjOZCHb9dvED",
     "wall": "w4IQNUYO5JqA",
     "created_at": "utc_time",
     "edited_at": "utc_time",

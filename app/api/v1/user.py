@@ -1,5 +1,6 @@
 from app import db
 from .dependencies import get_user
+from .login import router as login_router
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -9,6 +10,10 @@ from pymongo.collection import Collection as MongoCollection
 from typing import Annotated
 
 router = APIRouter()
+router.include_router(
+    login_router,
+    prefix="/login"
+)
 
 
 class User(BaseModel):
