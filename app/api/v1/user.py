@@ -1,5 +1,5 @@
 from app import db
-from .dependencies import get_user
+from .dependencies import get_user, ErrorMessage
 from .login import router as login_router
 
 from fastapi import APIRouter, Depends
@@ -26,10 +26,6 @@ class EditableUser(BaseModel):
     name: str | None = Field(
         default=None, title="New nickname for the user", max_length=30
     )
-
-
-class ErrorMessage(BaseModel):
-    message: str
 
 
 @router.get("/info", responses={401: {"model": ErrorMessage}})

@@ -1,5 +1,5 @@
 from app import db, config
-from .dependencies import get_settings
+from .dependencies import get_settings, get_new_id
 
 from fastapi import APIRouter, Body, HTTPException, Depends
 from pydantic import BaseModel
@@ -10,26 +10,11 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 
 import jwt
-import secrets
 import datetime
 from typing import Annotated
 from asyncio import get_running_loop
 
 router = APIRouter()
-
-
-async def get_new_id(collection: MongoCollection) -> str:
-    loop = get_running_loop()
-    users = await db.get_users()
-    while True:
-        id_ = secrets.token_urlsafe(9)
-        data = await loop.run_in_executor(
-            None, lambda: users.find_one({"id": id_})
-        )
-        if data is not None:
-            continue
-
-    return id_
 
 
 def get_token(user_id: str) -> str:
@@ -81,8 +66,9 @@ async def google_login(
     )
 
     if user is None:
+        users = await db.get_users()
         user = {
-            "id": get_new_id(),
+            "id": get_new_id(users),
             "email": idinfo['email'],
             "name": idinfo['name'][:30],
             "used_bytes": 0,
