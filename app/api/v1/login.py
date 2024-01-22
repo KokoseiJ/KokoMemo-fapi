@@ -19,7 +19,7 @@ router = APIRouter()
 
 def get_token(user_id: str) -> str:
     now = datetime.datetime.now(tz=datetime.UTC)
-    exp = now + datetime.timedelta(hour=24)
+    exp = now + datetime.timedelta(hours=24)
 
     body = {
         "sub": user_id,
@@ -29,11 +29,41 @@ def get_token(user_id: str) -> str:
 
     settings = get_settings()
 
-    return jwt.encode(body, settings.secret_key, algorithm=[settings.jwt_algo])
+    return jwt.encode(body, settings.secret_key, algorithm=settings.jwt_algo)
 
 
 class LoginResponse(BaseModel):
     token: str
+
+
+@router.post("/test")
+async def test_login(
+    user_id: Annotated[str, Body(embed=True)],
+    users: Annotated[MongoCollection, Depends(db.get_users)]
+) -> LoginResponse:
+    loop = get_running_loop()
+
+    user = await loop.run_in_executor(
+        None, lambda: users.find_one({"id": user_id})
+    )
+
+    if user is None:
+        user = {
+            "id": user_id,
+            "email": "orangestar@mikansei.com",
+            "name": "Orangestar",
+            "used_bytes": 0,
+            "logins": [],
+            "walls": []
+        }
+
+        await loop.run_in_executor(
+            None, lambda: users.insert_one(user)
+        )
+
+    return LoginResponse(
+        token=get_token(user_id)
+    )
 
 
 @router.post("/google")
@@ -66,7 +96,6 @@ async def google_login(
     )
 
     if user is None:
-        users = await db.get_users()
         user = {
             "id": get_new_id(users),
             "email": idinfo['email'],
