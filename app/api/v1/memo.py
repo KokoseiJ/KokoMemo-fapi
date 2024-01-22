@@ -4,10 +4,12 @@ from pydantic import BaseModel
 
 from pymongo.collection import Collection as MongoCollection
 
+import datetime
 import secrets
 from .dependencies import get_user, get_new_id
 from asyncio import get_running_loop
 from app import db
+from math import floor
 
 router = APIRouter()
 
@@ -49,12 +51,12 @@ class EditMemo(BaseModel):
 
 
 @router.get("/walls")
-def get_walls(user: Annotated[dict, Depends(get_user)]) -> list[Wall]:
+async def get_walls(user: Annotated[dict, Depends(get_user)]) -> list[Wall]:
     return user['walls']
 
 
 @router.post("/walls")
-def create_wall(
+async def create_wall(
     user: Annotated[dict, Depends(get_user)],
     users: Annotated[MongoCollection, Depends(db.get_users)],
     wall: NewWall
@@ -84,7 +86,7 @@ def create_wall(
 
 
 @router.put("/walls")
-def edit_wall(
+async def edit_wall(
     user: Annotated[dict, Depends(get_user)],
     users: Annotated[MongoCollection, Depends(db.get_users)],
     wall: EditWall
@@ -117,7 +119,7 @@ def edit_wall(
 
 
 @router.delete("/walls/{wall_id}")
-def delete_wall(
+async def delete_wall(
     user: Annotated[dict, Depends(get_user)],
     users: Annotated[MongoCollection, Depends(db.get_users)],
     memos: Annotated[MongoCollection, Depends(db.get_memos)],
@@ -143,7 +145,7 @@ def delete_wall(
 
 
 @router.get("/walls/{wall_id}/memos")
-def get_memos(
+async def get_memos(
     user: Annotated[dict, Depends(db.get_users)],
     users: Annotated[MongoCollection, Depends(db.get_users)],
     memos: Annotated[MongoCollection, Depends(db.get_memos)],
@@ -174,8 +176,9 @@ def get_memos(
 
 
 @router.get("/walls/{wall_id}/memos/{memo_id}")
-def get_memo(
+async def get_memo(
     user: Annotated[dict, Depends(get_user)],
+    memos: Annotated[MongoCollection, Depends(db.get_memos)],
     wall_id: str,
     memo_id: str
 ) -> Memo:
@@ -203,28 +206,117 @@ def get_memo(
 
 
 @router.post("/walls/{wall_id}/memos")
-def create_memo(
+async def create_memo(
     user: Annotated[dict, Depends(get_user)],
     memos: Annotated[MongoCollection, Depends(db.get_memos)],
     wall_id: str,
     memo: NewMemo
 ) -> Memo:
-    
+    id_ = await get_new_id(memos)
+    now = floor(datetime.datetime.now(tz=datetime.UTC))
+
+    if wall_id not in [wall['id'] for wall in user['walls']]:
+        raise HTTPException(
+            status_code=404,
+            details="Wall not found."
+        )
+
+    memo = {
+        "id": id_,
+        "owner": user['id'],
+        "wall": wall_id,
+        "created_at": now,
+        "edited_at": now,
+        "content": memo.content
+    }
+
+    await get_running_loop().run_in_executor(
+        None, lambda: memos.insert_one(memo)
+    )
+
+    return memo
 
 
 @router.put("/walls/{wall_id}/memos")
-def edit_memo(
+async def edit_memo(
     user: Annotated[dict, Depends(get_user)],
+    memos: Annotated[MongoCollection, Depends(db.get_memos)],
     wall_id: str,
     memo: EditMemo
 ):
-    pass
+    if wall_id not in [wall['id'] for wall in user['walls']]:
+        raise HTTPException(
+            status_code=404,
+            details="Wall not found."
+        )
+
+    loop = get_running_loop()
+
+    memo = await loop.run_in_executor(
+        None, lambda: memos.find_one({
+            "id": memo.id,
+            "owner": user['id'],
+            "wall": wall_id
+        })
+    )
+
+    if memo is None:
+        raise HTTPException(
+            status_code=404,
+            details="Memo not found."
+        )
+
+    if memo.wall is None and memo.content is None:
+        raise HTTPException(
+            status_code=400,
+            details="Either wall or content should be provided."
+        )
+
+    updates = dict()
+
+    if memo.wall is not None:
+        updates.update({"wall": memo.wall})
+    if memo.content is not None:
+        updates.update({"content": memo.content})
+
+    await loop.run_in_executor(
+        None, lambda: memos.update_one({"id": memo.id}, updates)
+    )
 
 
 @router.delete("/walls/{wall_id}/memos/{memo_id}")
-def delete_memo(
+async def delete_memo(
     user: Annotated[dict, Depends(get_user)],
+    memos: Annotated[MongoCollection, Depends(db.get_memos)],
     wall_id: str,
-    user_id: str
+    memo_id: str
 ):
-    pass
+    if wall_id not in [wall['id'] for wall in user['walls']]:
+        raise HTTPException(
+            status_code=404,
+            details="Wall not found."
+        )
+
+    query = {
+        "id": memo_id,
+        "wall": wall_id,
+        "owner": user['id']
+    }
+
+    loop = get_running_loop()
+
+    memo = await loop.run_in_executor(
+        None, lambda: memos.find_one(query)
+    )
+
+    if memo is None:
+        raise HTTPException(
+            status_code=404,
+            details="Memo not found."
+        )
+
+    await loop.run_in_executor(
+        None, lambda: memos.delete_one(query)
+    )
+
+    return
