@@ -6,17 +6,17 @@
 
 ### POST `/walls`
 
-### PUT `/walls/<id>`
+### PUT `/walls`
 
 ### DELETE `/walls/<id>`
 
-### GET `/walls/<id>/memos`
+### GET `/walls/<id>/memos?before=<before>&limit=<limit>`
+
+### GET `/walls/<id>/memos/<id>`
 
 ### POST `/walls/<id>/memos`
 
-### GET `/walls/<id>/memos/<id>?before=<before>&limit=<limit>`
-
-### PUT `/walls/<id>/memos/<id>`
+### PUT `/walls/<id>/memos`
 
 ### DELETE `/walls/<id>/memos/<id>`
 
