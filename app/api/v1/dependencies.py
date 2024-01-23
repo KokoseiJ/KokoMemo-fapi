@@ -27,8 +27,8 @@ async def get_new_id(collection: MongoCollection) -> str:
         data = await loop.run_in_executor(
             None, lambda: collection.find_one({"id": id_})
         )
-        if data is not None:
-            continue
+        if data is None:
+            break
 
     return id_
 

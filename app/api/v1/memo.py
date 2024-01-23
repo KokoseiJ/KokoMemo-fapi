@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from pymongo.collection import Collection as MongoCollection
 
+import pymongo
 import datetime
 import secrets
 from .dependencies import get_user, get_new_id
@@ -27,8 +28,8 @@ class NewWall(BaseModel):
 
 class EditWall(BaseModel):
     id: str
-    name: str | None
-    colour: int | None
+    name: str | None = None
+    colour: int | None = None
 
 
 class Memo(BaseModel):
@@ -46,8 +47,8 @@ class NewMemo(BaseModel):
 
 class EditMemo(BaseModel):
     id: str
-    wall: str | None
-    content: str | None
+    wall: str | None = None
+    content: str | None = None
 
 
 @router.get("/walls")
@@ -78,7 +79,7 @@ async def create_wall(
     await get_running_loop().run_in_executor(
         None, lambda: users.update_one(
             {"_id": user['_id']},
-            {"$addToSet", {"walls": new_wall}}
+            {"$addToSet": {"walls": new_wall}}
         )
     )
 
@@ -146,11 +147,11 @@ async def delete_wall(
 
 @router.get("/walls/{wall_id}/memos")
 async def get_memos(
-    user: Annotated[dict, Depends(db.get_users)],
     users: Annotated[MongoCollection, Depends(db.get_users)],
     memos: Annotated[MongoCollection, Depends(db.get_memos)],
+    user: Annotated[dict, Depends(get_user)],
     wall_id: str,
-    before: int | None,
+    before: int | None = None,
     limit: int = 20
 ) -> list[Memo]:
     loop = get_running_loop()
@@ -167,10 +168,10 @@ async def get_memos(
     }
 
     if before is not None:
-        query.update({"created_at": {"$lte": before}})
+        query.update({"created_at": {"$lt": before}})
 
     cursor = await loop.run_in_executor(None, lambda: memos.find(query))
-    cursor.sort("created_at").limit(20)
+    cursor.sort("created_at", pymongo.DESCENDING).limit(limit)
 
     return await loop.run_in_executor(None, lambda: list(cursor))
 
@@ -213,7 +214,7 @@ async def create_memo(
     memo: NewMemo
 ) -> Memo:
     id_ = await get_new_id(memos)
-    now = floor(datetime.datetime.now(tz=datetime.UTC))
+    now = floor(datetime.datetime.now(tz=datetime.UTC).timestamp())
 
     if wall_id not in [wall['id'] for wall in user['walls']]:
         raise HTTPException(
@@ -252,7 +253,7 @@ async def edit_memo(
 
     loop = get_running_loop()
 
-    memo = await loop.run_in_executor(
+    existing_memo = await loop.run_in_executor(
         None, lambda: memos.find_one({
             "id": memo.id,
             "owner": user['id'],
@@ -260,7 +261,7 @@ async def edit_memo(
         })
     )
 
-    if memo is None:
+    if existing_memo is None:
         raise HTTPException(
             status_code=404,
             details="Memo not found."
@@ -280,7 +281,7 @@ async def edit_memo(
         updates.update({"content": memo.content})
 
     await loop.run_in_executor(
-        None, lambda: memos.update_one({"id": memo.id}, updates)
+        None, lambda: memos.update_one({"id": memo.id}, {"$set": updates})
     )
 
 
