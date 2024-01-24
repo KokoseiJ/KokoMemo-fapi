@@ -12,7 +12,7 @@ services:
 
         RUN python -m pip install -r requirements.txt
 
-        ENTRYPOINT ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "app:app"]
+        ENTRYPOINT ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "app:app"]
     environment:
       MONGO_URL: "mongodb://mongouser:mongopw@mongo:27017/"
     env_file: .env
