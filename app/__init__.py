@@ -30,7 +30,8 @@ app.include_router(
 
 
 origins = [
-    "http://localhost:5000"
+    "http://localhost:5000",
+    "https://memo.kokoseij.xyz"
 ]
 app.add_middleware(
     CORSMiddleware,
