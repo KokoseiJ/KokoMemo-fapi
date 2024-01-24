@@ -1,0 +1,7 @@
+uvicorn[standard]
+fastapi
+pymongo
+pydantic-settings
+pyjwt
+google-auth
+requests
