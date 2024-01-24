@@ -95,13 +95,13 @@ async def edit_wall(
     if wall.id not in [wall['id'] for wall in user['walls']]:
         raise HTTPException(
             status_code=404,
-            details="Wall not found."
+            detail="Wall not found."
         )
 
     if wall.name is None and wall.colour is None:
         raise HTTPException(
             status_code=400,
-            details="Either name or colour should be provided."
+            detail="Either name or colour should be provided."
         )
 
     updates = dict()
@@ -131,7 +131,7 @@ async def delete_wall(
     if wall_id not in [wall['id'] for wall in user['walls']]:
         raise HTTPException(
             status_code=404,
-            details="Wall not found."
+            detail="Wall not found."
         )
     loop.run_in_executor(
         None, lambda: users.update_one(
@@ -186,7 +186,7 @@ async def get_memo(
     if wall_id not in [wall['id'] for wall in user['walls']]:
         raise HTTPException(
             status_code=404,
-            details="Wall not found."
+            detail="Wall not found."
         )
 
     data = await get_running_loop().run_in_executor(
@@ -200,7 +200,7 @@ async def get_memo(
     if data is None:
         raise HTTPException(
             status_code=404,
-            details="Memo not found."
+            detail="Memo not found."
         )
 
     return data
@@ -219,7 +219,7 @@ async def create_memo(
     if wall_id not in [wall['id'] for wall in user['walls']]:
         raise HTTPException(
             status_code=404,
-            details="Wall not found."
+            detail="Wall not found."
         )
 
     memo = {
@@ -245,10 +245,12 @@ async def edit_memo(
     wall_id: str,
     memo: EditMemo
 ):
-    if wall_id not in [wall['id'] for wall in user['walls']]:
+    wall_ids = [wall['id'] for wall in user['walls']]
+    
+    if wall_id not in wall_ids:
         raise HTTPException(
             status_code=404,
-            details="Wall not found."
+            detail="Wall not found."
         )
 
     loop = get_running_loop()
@@ -264,19 +266,26 @@ async def edit_memo(
     if existing_memo is None:
         raise HTTPException(
             status_code=404,
-            details="Memo not found."
+            detail="Memo not found."
         )
 
     if memo.wall is None and memo.content is None:
         raise HTTPException(
             status_code=400,
-            details="Either wall or content should be provided."
+            detail="Either wall or content should be provided."
         )
 
     updates = dict()
 
     if memo.wall is not None:
+        if memo.wall not in wall_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="Wall does not exist."
+            )
+
         updates.update({"wall": memo.wall})
+
     if memo.content is not None:
         updates.update({"content": memo.content})
 
@@ -295,7 +304,7 @@ async def delete_memo(
     if wall_id not in [wall['id'] for wall in user['walls']]:
         raise HTTPException(
             status_code=404,
-            details="Wall not found."
+            detail="Wall not found."
         )
 
     query = {
@@ -313,7 +322,7 @@ async def delete_memo(
     if memo is None:
         raise HTTPException(
             status_code=404,
-            details="Memo not found."
+            detail="Memo not found."
         )
 
     await loop.run_in_executor(
