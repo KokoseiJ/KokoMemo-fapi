@@ -1,7 +1,7 @@
 from app import db, config
 from .dependencies import get_settings, get_new_id
 
-from fastapi import APIRouter, Body, HTTPException, Depends
+from fastapi import APIRouter, Body, HTTPException, Depends, Response
 from pydantic import BaseModel
 
 from pymongo.collection import Collection as MongoCollection
@@ -70,8 +70,11 @@ async def test_login(
 async def google_login(
     token: Annotated[str, Body(embed=True)],
     settings: Annotated[config.Settings, Depends(get_settings)],
-    users: Annotated[MongoCollection, Depends(db.get_users)]
+    users: Annotated[MongoCollection, Depends(db.get_users)],
+    response: Response
 ) -> LoginResponse:
+    response.headers["Access-Control-Allow-Origin"] = "*"
+
     loop = get_running_loop()
 
     try:
@@ -97,7 +100,7 @@ async def google_login(
 
     if user is None:
         user = {
-            "id": get_new_id(users),
+            "id": await get_new_id(users),
             "email": idinfo['email'],
             "name": idinfo['name'][:30],
             "used_bytes": 0,

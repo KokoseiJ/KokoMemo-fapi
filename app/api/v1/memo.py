@@ -18,18 +18,18 @@ router = APIRouter()
 class Wall(BaseModel):
     id: str
     name: str
-    colour: int
+    colour: str
 
 
 class NewWall(BaseModel):
     name: str
-    colour: int
+    colour: str
 
 
 class EditWall(BaseModel):
     id: str
     name: str | None = None
-    colour: int | None = None
+    colour: str | None = None
 
 
 class Memo(BaseModel):
@@ -159,7 +159,7 @@ async def get_memos(
     if wall_id not in [wall['id'] for wall in user['walls']]:
         raise HTTPException(
             status_code=404,
-            details="Wall not found."
+            detail="Wall not found."
         )
 
     query = {
