@@ -1,5 +1,6 @@
 from kokomemo.config import Settings, get_config
-from kokomemo.db import get_collection, get_new_id, get_user_ids, new_session
+from kokomemo.db import get_collection
+from kokomemo.auth import get_new_id, get_user_ids, new_session
 from kokomemo.models import User
 from kokomemo.logger import logger
 from pydantic import BaseModel
