@@ -56,18 +56,16 @@ get all memos
     "sessions": [
         {
             "id": "meow",
-            "name": "meow",
-            "last_ip": "10.5.14.1",
-            "created_at": 123123123,
             "last_refresh": 123123123,
-            "refresh_ttl": 38400
+            "created_at": 123123123,
+            "expires_at": 123123123
         }
     ],
     "integrations": [
         {
             "service": "google",
             "data": {
-                "id": "whatever google gave me"
+                "id": "meowmeow"
             }
         }
     ],

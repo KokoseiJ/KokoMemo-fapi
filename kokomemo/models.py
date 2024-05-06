@@ -1,14 +1,12 @@
-from pydantic import BaseModel
-from datetime import datetime, timedelta
+from pydantic import BaseModel, Field
+from datetime import datetime, UTC
 
 
 class Session(BaseModel):
     id: str
-    name: str
-    last_ip: str
+    current_refresh_id: str
     created_at: datetime
-    last_refresh: datetime
-    refresh_ttl: timedelta
+    expires_at: datetime
 
 
 class Integration(BaseModel):
@@ -20,16 +18,16 @@ class Wall(BaseModel):
     id: str
     name: str
     colour: int
-    created_at: datetime
-    modified_at: datetime
+    created_at: datetime = Field(default_factory=lambda: datetime(UTC))
+    modified_at: datetime = Field(default_factory=lambda: datetime(UTC))
 
 
 class User(BaseModel):
     id: str
     name: str
     email: str
-    used_bytes: int
-    created_at: datetime
-    sessions: list[Session]
+    used_bytes: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime(UTC))
+    sessions: list[Session] = []
     integrations: list[Integration]
-    walls: list[Wall]
+    walls: list[Wall] = []
