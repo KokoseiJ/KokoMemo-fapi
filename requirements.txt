@@ -3,4 +3,4 @@ fastapi
 pydantic
 pydantic-settings
 motor
-
+google-auth
