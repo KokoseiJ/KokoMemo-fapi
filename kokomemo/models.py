@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from datetime import datetime, UTC
 
 
@@ -31,3 +31,12 @@ class User(BaseModel):
     sessions: list[Session] = []
     integrations: list[Integration]
     walls: list[Wall] = []
+
+
+class Token(BaseModel):
+    typ: str
+    sub: str
+    sid: str
+    rid: str | None = None
+    iat: datetime
+    exp: datetime

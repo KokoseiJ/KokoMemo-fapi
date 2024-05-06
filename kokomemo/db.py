@@ -30,6 +30,9 @@ async def db_connect(url: str = None) -> None:
     logger.debug("MongoDB connected!")
 
 
-def get_collection(name: str) -> Callable[[], AsyncIOMotorCollection]:
-    def collection_dependency() -> AsyncIOMotorCollection:
-        return db[name].with_options(options)
+def get_collection(name: str) -> AsyncIOMotorCollection:
+    return db[name].with_options(options)
+
+
+def collection_depends(name: str) -> Callable[[], AsyncIOMotorCollection]:
+    return lambda: get_collection(name)

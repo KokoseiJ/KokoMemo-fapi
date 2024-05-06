@@ -8,6 +8,8 @@ TODO: add routes for adding/removing integrations
 Uses whatever google library returns
 ### GET `/user/logout`
 session is kil
+### POST `/user/token/refresh`
+post refresh token and gew new stuff
 ### DELETE `/user/session/{id}`
 logout other sessions
 ### GET `/user/info`
@@ -56,7 +58,7 @@ get all memos
     "sessions": [
         {
             "id": "meow",
-            "last_refresh": 123123123,
+            "current_refresh_id": "meow",
             "created_at": 123123123,
             "expires_at": 123123123
         }
@@ -90,5 +92,30 @@ get all memos
     "index": 1.0,
     "created_at": 123123123,
     "modified_at": 123123123
+}
+```
+
+## Tokens
+
+### Access Token
+```json
+{
+    "typ": "AT",
+    "sub": "user_id",
+    "sid": "session_id",
+    "iat": 123123123,
+    "exp": 123123123
+}
+```
+
+### Refresh Token
+```json
+{
+    "typ": "RT",
+    "sub": "user_id",
+    "sid": "session_id",
+    "rid": "refresh_id",
+    "iat": 123123123,
+    "exp": 123123123
 }
 ```
