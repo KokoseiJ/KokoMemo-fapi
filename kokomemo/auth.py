@@ -4,11 +4,12 @@ from .models import User, Session, Token
 from pymongo import ReturnDocument
 import jwt
 from jwt.exceptions import InvalidTokenError
+from collections.abc import Sequence
 from secrets import token_urlsafe
 from datetime import datetime, timedelta, UTC
 
 
-async def verify_token(token: str) -> Token | None:
+def verify_token(token: str) -> Token | None:
     """
     Checks jwt validity and exp
     """
@@ -66,7 +67,7 @@ def get_new_tokens(user_id: str, session_id: str, refresh_id: str, now=None,
 async def new_session(user: User, ttl: int = config.refresh_ttl) \
                 -> tuple[str, tuple[str, str]]:
     now = datetime.now(UTC)
-    session_ids = [session['id'] for session in user['sessions']]
+    session_ids = [session.id for session in user.sessions]
     new_id = get_new_id(session_ids)
     new_refresh_id = get_new_id()
     session = Session(
@@ -81,7 +82,7 @@ async def new_session(user: User, ttl: int = config.refresh_ttl) \
         {"$push": {"sessions": session.model_dump()}}
     )
 
-    return (new_id, get_new_tokens(new_id, new_refresh_id, now, ttl))
+    return (new_id, get_new_tokens(user.id, new_id, new_refresh_id, now, ttl))
 
 
 async def get_user(query: str | dict) -> User | None:
@@ -107,8 +108,10 @@ async def get_user(query: str | dict) -> User | None:
 
 
 async def get_session_ids(user_id: str) -> list[str]:
-    user = await get_collection("users").find_one({"id": user_id})
-    return [session['id'] for session in user['sessions']]
+    user = await get_user(user_id)
+    if user is None:
+        raise RuntimeError("user %s not found", user_id)
+    return [session.id for session in user.sessions]
 
 
 async def get_user_ids() -> list[str]:
@@ -116,7 +119,7 @@ async def get_user_ids() -> list[str]:
     return [x['id'] async for x in cursor]
 
 
-def get_new_id(ids: list[str] = [], token_len: int = 9) -> str:
+def get_new_id(ids: Sequence[str] = [], token_len: int = 9) -> str:
     new_id = None
     while not new_id or new_id in ids:
         new_id = token_urlsafe(9)

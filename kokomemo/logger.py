@@ -1,6 +1,6 @@
 from .config import config
 import logging
-from logging.handlers import StreamHandler, FileHandler
+from logging import StreamHandler, FileHandler
 
 logger = logging.getLogger(config.app_name)
 logger.setLevel(config.loglevel)
@@ -23,5 +23,3 @@ if config.logfile:
     file_handler.setFormatter(formatter)
 
     logger.addHandler(file_handler)
-else:
-    file_handler = None

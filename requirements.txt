@@ -4,3 +4,5 @@ pydantic
 pydantic-settings
 motor
 google-auth
+pyjwt
+

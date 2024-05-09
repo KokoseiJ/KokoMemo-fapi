@@ -7,10 +7,10 @@ from typing import Callable
 client = None
 db = None
 
-options = CodecOptions(tz_aware=True)
+options: CodecOptions = CodecOptions(tz_aware=True)
 
 
-async def db_connect(url: str = None) -> None:
+async def db_connect(url: str | None = None) -> None:
     global client, db
 
     if client is not None:
@@ -23,7 +23,7 @@ async def db_connect(url: str = None) -> None:
     logger.debug("Attempting to connect to %s", url)
 
     client = AsyncIOMotorClient(url)
-    db = client[config.db_name]
+    db = client[config.dbname]
 
     await db.command("ping")
 
@@ -31,6 +31,8 @@ async def db_connect(url: str = None) -> None:
 
 
 def get_collection(name: str) -> AsyncIOMotorCollection:
+    if db is None:
+        raise RuntimeError("DB is not initialized!")
     return db[name].with_options(options)
 
 

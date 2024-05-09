@@ -18,8 +18,8 @@ class Wall(BaseModel):
     id: str
     name: str
     colour: int
-    created_at: datetime = Field(default_factory=lambda: datetime(UTC))
-    modified_at: datetime = Field(default_factory=lambda: datetime(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime(tzinfo=UTC))
+    modified_at: datetime = Field(default_factory=lambda: datetime(tzinfo=UTC))
 
 
 class User(BaseModel):
@@ -27,7 +27,7 @@ class User(BaseModel):
     name: str
     email: str
     used_bytes: int = 0
-    created_at: datetime = Field(default_factory=lambda: datetime(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime(tzinfo=UTC))
     sessions: list[Session] = []
     integrations: list[Integration]
     walls: list[Wall] = []
