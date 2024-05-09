@@ -1,16 +1,16 @@
 from .db import get_collection
 from .config import config
 from .models import User, Session, Token
-from .logger import logger
+from pymongo import ReturnDocument
 import jwt
 from jwt.exceptions import InvalidTokenError
 from secrets import token_urlsafe
 from datetime import datetime, timedelta, UTC
 
 
-async def verify_token(token: str) -> tuple[Token, User] | bool:
+async def verify_token(token: str) -> Token | None:
     """
-    Checks jwt validity, session and exp
+    Checks jwt validity and exp
     """
 
     try:
@@ -21,42 +21,19 @@ async def verify_token(token: str) -> tuple[Token, User] | bool:
             }
         )
     except InvalidTokenError:
-        return False
+        return None
 
     data = Token(**data)
 
     if data.typ == "AT":
-        pass
+        return data
     elif data.typ == "RT":
         if not data.rid:
-            return False
+            return None
     else:
-        return False
+        return None
 
-    users = get_collection("users")()
-
-    user = await users.find_one(
-        {"id": data['sub'], "sessions.id": data['sid']}
-    )
-
-    if not user:
-        return False
-
-    user = User(**user)
-
-    session = [
-        session for session in user.sessions
-        if session.id == data.sid
-    ][0]
-
-    if data.typ == "RT" and session.current_refresh_id != data.rid:
-        logger.warning("Duplicate Refresh Token detected: %s", data)
-        await users.update_one(
-            {"id": user.id}, {"$pull": {"sessions": {"id": data.sid}}}
-        )
-        return False
-
-    return (data, user)
+    return data
 
 
 def get_new_tokens(user_id: str, session_id: str, refresh_id: str, now=None,
@@ -105,6 +82,28 @@ async def new_session(user: User, ttl: int = config.refresh_ttl) \
     )
 
     return (new_id, get_new_tokens(new_id, new_refresh_id, now, ttl))
+
+
+async def get_user(query: str | dict) -> User | None:
+    """
+    Queries user while wiping out expired sessions
+    """
+
+    if isinstance(query, str):
+        query = {"id": query}
+    elif not isinstance(query, dict):
+        raise ValueError("query should be str or dict")
+
+    user = await get_collection("users").find_one_and_update(
+        query,
+        {"$pull": {"sessions.expires_at": {"$lte": datetime.now(UTC)}}},
+        return_document=ReturnDocument.AFTER
+    )
+
+    if not user:
+        return None
+
+    return User(**user)
 
 
 async def get_session_ids(user_id: str) -> list[str]:

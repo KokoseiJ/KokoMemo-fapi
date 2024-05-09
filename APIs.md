@@ -10,10 +10,8 @@ Uses whatever google library returns
 session is kil
 ### POST `/user/token/refresh`
 post refresh token and gew new stuff
-### DELETE `/user/session/{id}`
-logout other sessions
 ### GET `/user/info`
-gets everything in user except sessions.last_refresh, sessions.refresh_ttl, integrations.data, walls
+gets everything in user except sessions, integrations.data, walls
 ### PUT `/user/info`
 only receive name
 
@@ -117,5 +115,16 @@ get all memos
     "rid": "refresh_id",
     "iat": 123123123,
     "exp": 123123123
+}
+```
+
+## Responses
+
+```json
+{
+    "meta": {
+        "message": "meowmeow"
+    },
+    "data": "whatever I decide to give out"
 }
 ```

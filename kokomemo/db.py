@@ -35,4 +35,7 @@ def get_collection(name: str) -> AsyncIOMotorCollection:
 
 
 def collection_depends(name: str) -> Callable[[], AsyncIOMotorCollection]:
-    return lambda: get_collection(name)
+    def inner_depends() -> AsyncIOMotorCollection:
+        return get_collection(name)
+
+    return inner_depends

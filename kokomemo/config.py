@@ -12,10 +12,8 @@ class Settings(BaseSettings):
     google_id: str
     # Access Token TTL: 30 minutes
     access_ttl: int = 1800
-    # Refresh Token TTL: 1 day
-    refresh_ttl: int = 86400
-    # Refresh Token Persisting session TTL: 1 week
-    refresh_persist_ttl: int = 604800
+    # Refresh Token TTL: 1 week
+    refresh_ttl: int = 604800
 
     model_config = SettingsConfigDict(env_file=".env")
 
