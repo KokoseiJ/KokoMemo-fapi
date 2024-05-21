@@ -1,9 +1,16 @@
 from .api import router as api
-
+from .db import db_connect
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await db_connect()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(
     api,
