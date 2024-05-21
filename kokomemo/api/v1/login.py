@@ -7,7 +7,7 @@ from kokomemo.auth import (
 from kokomemo.models import User, Integration
 from kokomemo.logger import logger
 from kokomemo.dependencies.auth import InvalidToken, LoginInfo, check_user
-from kokomemo.v1.models import BaseResponse, Meta
+from kokomemo.api.v1.models import BaseResponse, Meta
 from pydantic import BaseModel
 from fastapi import APIRouter, Body, Depends
 from motor.motor_asyncio import AsyncIOMotorCollection as Collection
@@ -63,7 +63,7 @@ async def google_login(
             idinfo['sub'],
             idinfo['email']
         )
-        user = await users.find_one_and_update(
+        user_data = await users.find_one_and_update(
             {"email": idinfo['email']},
             {
                 "$push": {
@@ -76,7 +76,7 @@ async def google_login(
             return_document=ReturnDocument.AFTER
         )
 
-        user = User(**user)
+        user = User(**user_data)
 
     if not user:
         logger.debug(
@@ -94,12 +94,10 @@ async def google_login(
                 service="google",
                 data={"id": idinfo['sub']}
             )]
-        ).model_dump()
+        )
 
-        await users.insert_one(user)
+        await users.insert_one(user.model_dump())
         logger.debug("New user: %s", user)
-
-        user = User(**user)
 
     session_id, (at, rt) = await new_session(user)
 
