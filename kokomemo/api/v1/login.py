@@ -4,10 +4,12 @@ from kokomemo.auth import (
     get_new_id, get_user_ids, get_user,
     new_session, get_new_tokens, verify_token
 )
-from kokomemo.models import User, Integration, Token
+from kokomemo.models import User, Integration
 from kokomemo.logger import logger
+from kokomemo.dependencies.auth import InvalidToken, LoginInfo, check_user
+from kokomemo.v1.models import BaseResponse, Meta
 from pydantic import BaseModel
-from fastapi import APIRouter, Header, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends
 from motor.motor_asyncio import AsyncIOMotorCollection as Collection
 from pymongo import ReturnDocument
 from google.oauth2 import id_token
@@ -19,20 +21,6 @@ import asyncio
 router = APIRouter()
 
 
-class InvalidToken(HTTPException):
-    def __init__(self):
-        super().__init__(status_code=401, detail="The token is invalid.")
-
-
-class Meta(BaseModel):
-    message: str
-
-
-class BaseResponse(BaseModel):
-    meta: Meta
-    data: BaseModel | dict | None = None
-
-
 class LoginTokens(BaseModel):
     access_token: str
     refresh_token: str
@@ -40,43 +28,6 @@ class LoginTokens(BaseModel):
 
 class LoginResponse(BaseResponse):
     data: LoginTokens
-
-
-class LoginInfo(BaseModel):
-    user: User
-    token: Token
-
-
-async def check_token(
-    authorization: Annotated[str, Header(
-        description="Access Token from login endpoint",
-        pattern=r"Bearer ([a-zA-Z0-9-_]+\.){2}[a-zA-Z0-9-_]+"
-    )]
-) -> Token:
-    token = authorization.split(" ", 1)[1]
-    body = verify_token(token)
-
-    if not body:
-        logger.warning("Invalid token %s", token)
-        raise InvalidToken()
-    elif body.typ != 'AT':
-        logger.warning("Invalid token type %s: %s (%s)", body.typ, token, body)
-        raise InvalidToken()
-
-    return body
-
-
-async def check_user(
-    token: Annotated[Token, Depends(check_token)],
-    users: Annotated[Collection, Depends(collection_depends("users"))]
-) -> LoginInfo:
-    user = await get_user(token.sub)
-
-    if not user:
-        logger.warning("User %s not found: %s", token.sub, token)
-        raise InvalidToken()
-
-    return LoginInfo(user=user, token=token)
 
 
 async def get_google_idinfo(
@@ -194,7 +145,7 @@ async def refresh(
 
     if not body:
         logger.warning("Invalid token %s", token)
-        raise InvalidToken
+        raise InvalidToken()
     elif body.typ != "RT":
         logger.warning("Invalid token type %s: %s (%s)", body.typ, token, body)
         raise InvalidToken()
