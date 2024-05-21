@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    kokomemo_debug: bool = False
     app_name: str = "kokomemo"
     mongodb_url: str = "mongodb://localhost:27017"
     dbname: str = app_name

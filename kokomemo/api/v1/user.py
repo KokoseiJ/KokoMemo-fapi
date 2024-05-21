@@ -1,3 +1,5 @@
+from .login import router as login
+from kokomemo.db import collection_depends
 from kokomemo.dependencies.auth import check_user, LoginInfo
 from kokomemo.models import User, Session, Wall, Integration
 from .models import BaseResponse, Meta
@@ -8,6 +10,12 @@ from pydantic.json_schema import SkipJsonSchema
 from typing import Annotated
 
 router = APIRouter()
+
+router.include_router(
+    login,
+    prefix="/login",
+    tags=["login"]
+)
 
 
 class PartialIntegration(Integration):

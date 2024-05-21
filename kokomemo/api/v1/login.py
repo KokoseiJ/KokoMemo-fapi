@@ -1,4 +1,4 @@
-from kokomemo.config import Settings, get_config
+from kokomemo.config import Settings, get_config, config
 from kokomemo.db import collection_depends
 from kokomemo.auth import (
     get_new_id, get_user_ids, get_user,
@@ -45,6 +45,41 @@ async def get_google_idinfo(
     except ValueError:
         logger.warning("validation failed: %s", token)
         raise InvalidToken()
+
+
+if config.kokomemo_debug:
+    @router.post("/test")
+    async def test_login(
+        email: Annotated[
+            str, Body(description="Email")
+        ],
+        users: Annotated[Collection, Depends(collection_depends("users"))]
+    ) -> LoginResponse:
+        user = await get_user({
+            "email": email
+        })
+
+        if not user:
+            logger.debug("email %s not found, creating account", email)
+            user = User(
+                id=get_new_id(await get_user_ids()),
+                name="TestAccount",
+                email=email,
+                integrations=[Integration(
+                    service="test",
+                    data={}
+                )]
+            )
+
+            await users.insert_one(user.model_dump())
+
+        session_id, (at, rt) = await new_session(user)
+
+        return LoginResponse(
+            meta=Meta(message="mrrrp"),
+            data=LoginTokens(access_token=at, refresh_token=rt)
+        )
+
 
 
 @router.post("/google")
