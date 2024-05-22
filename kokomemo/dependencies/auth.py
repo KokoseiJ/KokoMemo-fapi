@@ -3,9 +3,15 @@ from kokomemo.db import collection_depends
 from kokomemo.auth import verify_token, get_user
 from kokomemo.logger import logger
 from motor.motor_asyncio import AsyncIOMotorCollection as Collection
-from fastapi import Header, HTTPException, Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import HTTPException, Depends
 from pydantic import BaseModel
 from typing import Annotated
+
+security = HTTPBearer(
+    scheme_name="Access Token",
+    description="Access Token from login endpoint"
+)
 
 
 class InvalidToken(HTTPException):
@@ -19,12 +25,10 @@ class LoginInfo(BaseModel):
 
 
 async def check_token(
-    authorization: Annotated[str, Header(
-        description="Access Token from login endpoint",
-        pattern=r"Bearer ([a-zA-Z0-9-_]+\.){2}[a-zA-Z0-9-_]+"
-    )]
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]
 ) -> Token:
-    token = authorization.split(" ", 1)[1]
+    token = credentials.credentials
+    logger.debug(type(token))
     body = verify_token(token)
 
     if not body:
