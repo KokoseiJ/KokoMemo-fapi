@@ -3,6 +3,7 @@ from kokomemo.db import collection_depends
 from kokomemo.dependencies.auth import check_user, LoginInfo
 from kokomemo.models import User, Session, Wall, Integration
 from .models import BaseResponse, Meta
+from kokomemo.logger import logger
 from motor.motor_asyncio import AsyncIOMotorCollection as Collection
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -32,7 +33,7 @@ class UserInfoResponse(BaseResponse):
     data: UserInfo
 
 
-class UserInfoRequest(BaseResponse):
+class UserInfoRequest(BaseModel):
     name: str
 
 
@@ -40,7 +41,8 @@ class UserInfoRequest(BaseResponse):
 def get_userinfo(
     user: Annotated[LoginInfo, Depends(check_user)]
 ) -> UserInfoResponse:
-    user_info = UserInfo(**user.model_dump())
+    logger.debug(user.user.model_dump())
+    user_info = UserInfo(**user.user.model_dump())
 
     return UserInfoResponse(
         meta=Meta(message="User successfully queried"),
@@ -53,7 +55,7 @@ async def post_userinfo(
     user: Annotated[LoginInfo, Depends(check_user)],
     users: Annotated[Collection, Depends(collection_depends("users"))],
     user_info: UserInfoRequest
-):
+) -> UserInfoResponse:
     await users.update_one(
         {"id": user.user.id}, {"$set": {"name": user_info.name}}
     )

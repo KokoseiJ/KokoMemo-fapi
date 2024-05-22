@@ -1,6 +1,7 @@
 from .db import get_collection
 from .config import config
 from .models import User, Session, Token
+from .logger import logger
 from pymongo import ReturnDocument
 import jwt
 from jwt.exceptions import InvalidTokenError
@@ -15,6 +16,7 @@ def verify_token(token: str) -> Token | None:
     """
 
     try:
+        logger.debug("testing %s", token)
         data = jwt.decode(
             token, config.secret, algorithms=["HS256"],
             options={
@@ -22,16 +24,21 @@ def verify_token(token: str) -> Token | None:
             }
         )
     except InvalidTokenError:
+        logger.exception("Invalid Token Error:")
         return None
 
     data = Token(**data)
 
     if data.typ == "AT":
+        logger.debug("AT detected")
         return data
     elif data.typ == "RT":
+        logger.debug("RT detected")
         if not data.rid:
+            logger.warning("RID not present, wrong token?")
             return None
     else:
+        logger.debug("Invalid token type %s", data.typ)
         return None
 
     return data
@@ -54,6 +61,7 @@ def get_new_tokens(user_id: str, session_id: str, refresh_id: str, now=None,
         typ="RT",
         sub=user_id,
         sid=session_id,
+        rid=refresh_id,
         iat=now,
         exp=now + timedelta(seconds=ttl)
     )
@@ -97,7 +105,7 @@ async def get_user(query: str | dict) -> User | None:
 
     user = await get_collection("users").find_one_and_update(
         query,
-        {"$pull": {"sessions.expires_at": {"$lte": datetime.now(UTC)}}},
+        {"$pull": {"sessions": {"expires_at": {"$lte": datetime.now(UTC)}}}},
         return_document=ReturnDocument.AFTER
     )
 

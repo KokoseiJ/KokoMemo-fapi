@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     dbname: str = app_name
     logfile: str | None = None
     loglevel: str = "INFO"
-    # Secret key for JWT signing- I recommend 512bit or larger!
+    # Secret key for JWT signing- I recommend 256bit or larger!
     secret: str | None = None
     google_id: str | None = None
     # Access Token TTL: 30 minutes

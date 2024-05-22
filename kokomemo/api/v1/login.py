@@ -32,7 +32,7 @@ class LoginResponse(BaseResponse):
 
 async def get_google_idinfo(
     token: Annotated[
-        str, Body(description="Token from Google")
+        str, Body(description="Token from Google", embed=True)
     ],
     config: Annotated[Settings, Depends(get_config)]
 ) -> dict:
@@ -51,7 +51,7 @@ if config.kokomemo_debug:
     @router.post("/test")
     async def test_login(
         email: Annotated[
-            str, Body(description="Email")
+            str, Body(description="Email", embed=True)
         ],
         users: Annotated[Collection, Depends(collection_depends("users"))]
     ) -> LoginResponse:
@@ -79,7 +79,6 @@ if config.kokomemo_debug:
             meta=Meta(message="mrrrp"),
             data=LoginTokens(access_token=at, refresh_token=rt)
         )
-
 
 
 @router.post("/google")
@@ -157,9 +156,9 @@ async def logout(
     return BaseResponse(meta=Meta(message="Session has been deleted."))
 
 
-@router.get("/token/refresh")
+@router.post("/token/refresh")
 async def refresh(
-    token: Annotated[str, Body(description="Refresh Token")],
+    token: Annotated[str, Body(description="Refresh Token", embed=True)],
     users: Annotated[Collection, Depends(collection_depends("users"))],
     config: Annotated[Settings, Depends(get_config)]
 ):
