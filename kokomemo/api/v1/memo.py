@@ -127,7 +127,6 @@ async def edit_walls(
     users: Annotated[Collection, Depends(collection_depends("users"))],
     data: EditWall
 ) -> WallResponse:
-
     if data.id not in [wall.id for wall in login.user.walls]:
         raise WallNotFound()
 
@@ -226,4 +225,30 @@ async def post_memos(
     return MemoResponse(
         data=ResponseMemo(**new_memo.model_dump()),
         meta=Meta(message="Memo successfully created.")
+    )
+
+
+@router.put("/walls/{wall_id}/memos")
+async def edit_memo(
+    wall_id: Annotated[str, Depends(is_valid_wallid)],
+    login: Annotated[LoginInfo, Depends(check_user)],
+    memos: Annotated[Collection, Depends(collection_depends("memos"))],
+    data: EditMemo
+):
+    payload = {"modified_at": datetime.now(UTC)}
+    if data.content:
+        payload.update({"content": data.content})
+
+    memo = await memos.find_one_and_update(
+        {"id": data.id, "wall_id": wall_id, "user_id": login.user.id},
+        {"$set": payload},
+        return_document=ReturnDocument.AFTER
+    )
+
+    if not memo:
+        raise MemoNotFound()
+
+    return MemoResponse(
+        data=ResponseMemo(**memo),
+        meta=Meta(message="Memo has been successfully edited.")
     )

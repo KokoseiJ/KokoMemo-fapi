@@ -6,7 +6,7 @@ class Memo(BaseModel):
     id: str
     user_id: str
     wall_id: str
-    contents: str = ""
+    content: str = ""
     index: float
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     modified_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
