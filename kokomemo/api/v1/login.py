@@ -38,7 +38,7 @@ async def get_google_idinfo(
 ) -> dict:
     try:
         return await asyncio.get_running_loop().run_in_executor(
-            None, lambda: id_token.verify_oauth_token(
+            None, lambda: id_token.verify_oauth2_token(
                 token, requests.Request(), config.google_id
             )
         )
@@ -147,7 +147,7 @@ async def logout(
     users: Annotated[Collection, Depends(
         collection_depends("users")
     )]
-):
+) -> BaseResponse:
     await users.update_one(
         {"id": login.user.id},
         {"$pull": {"sessions": {"id": login.token.sid}}}
@@ -161,7 +161,7 @@ async def refresh(
     token: Annotated[str, Body(description="Refresh Token", embed=True)],
     users: Annotated[Collection, Depends(collection_depends("users"))],
     config: Annotated[Settings, Depends(get_config)]
-):
+) -> LoginResponse:
     """
     This has to check:
     If user exists

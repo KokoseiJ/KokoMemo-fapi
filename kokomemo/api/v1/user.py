@@ -41,7 +41,6 @@ class UserInfoRequest(BaseModel):
 def get_userinfo(
     user: Annotated[LoginInfo, Depends(check_user)]
 ) -> UserInfoResponse:
-    logger.debug(user.user.model_dump())
     user_info = UserInfo(**user.user.model_dump())
 
     return UserInfoResponse(
@@ -50,8 +49,8 @@ def get_userinfo(
     )
 
 
-@router.post("/info")
-async def post_userinfo(
+@router.put("/info")
+async def put_userinfo(
     user: Annotated[LoginInfo, Depends(check_user)],
     users: Annotated[Collection, Depends(collection_depends("users"))],
     user_info: UserInfoRequest
