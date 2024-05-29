@@ -252,3 +252,22 @@ async def edit_memo(
         data=ResponseMemo(**memo),
         meta=Meta(message="Memo has been successfully edited.")
     )
+
+
+@router.delete("/walls/{wall_id}/memos/{memo_id}")
+async def delete_memo(
+    wall_id: Annotated[str, Depends(is_valid_wallid)],
+    memo_id: str,
+    login: Annotated[LoginInfo, Depends(check_user)],
+    memos: Annotated[Collection, Depends(collection_depends("memos"))]
+) -> BaseResponse:
+    result = await memos.delete_one(
+        {"id": memo_id, "wall_id": wall_id, "user_id": login.user.id}
+    )
+
+    if result.deleted_count != 1:
+        raise MemoNotFound()
+
+    return BaseResponse(
+        meta=Meta(message="Successfully deleted memo.")
+    )
