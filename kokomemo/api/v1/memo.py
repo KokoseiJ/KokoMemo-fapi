@@ -21,20 +21,9 @@ class WallNotFound(HTTPException):
         super().__init__(status_code=404, detail="Wall not found.")
 
 
-class WallsResponse(BaseResponse):
-    data: list[Wall]
-
-
-class WallResponse(BaseResponse):
-    data: Wall
-
-
-class MemosResponse(BaseResponse):
-    data: list[Memo]
-
-
-class MemoResponse(BaseResponse):
-    data: Memo
+class MemoNotFound(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=404, detail="Memo not found.")
 
 
 class PostWall(Wall):
@@ -56,6 +45,34 @@ class PostMemo(Memo):
     index: SkipJsonSchema[float] = Field(default=0, exclude=True)
     created_at: SkipJsonSchema[datetime] = Field(default=datetime.now(), exclude=True)
     modified_at: SkipJsonSchema[datetime] = Field(default=datetime.now(), exclude=True)
+
+
+class EditMemo(PostMemo):
+    id: str
+    content: str | None = None
+    after: int | None = None
+
+
+class ResponseMemo(Memo):
+    user_id: SkipJsonSchema[str] = Field(default="", exclude=True)
+    wall_id: SkipJsonSchema[str] = Field(default="", exclude=True)
+    index: SkipJsonSchema[float] = Field(default=0, exclude=True)
+
+
+class WallsResponse(BaseResponse):
+    data: list[Wall]
+
+
+class WallResponse(BaseResponse):
+    data: Wall
+
+
+class MemosResponse(BaseResponse):
+    data: list[ResponseMemo]
+
+
+class MemoResponse(BaseResponse):
+    data: ResponseMemo
 
 
 def is_valid_wallid(
@@ -156,15 +173,22 @@ async def get_memos(
     wall_id: Annotated[str, Depends(is_valid_wallid)],
     login: Annotated[LoginInfo, Depends(check_user)],
     memos: Annotated[Collection, Depends(collection_depends("memos"))],
-    after: int | None = None,
+    after: str | None = None,
     limit: int = 20
 ) -> MemosResponse:
+    if after:
+        after_memo = await memos.find_one({"id": after})
+        if not after_memo:
+            raise MemoNotFound()
+        index = after_memo['index']
+
     condition = {"wall_id": wall_id, "user_id": login.user.id}
     if after is not None:
-        condition.update({"index": {"$lt": after}})
-    memos = [memo async for memo in memos.find(condition)
-                                         .sort("index", DESCENDING)
-                                         .limit(limit)]
+        condition.update({"index": {"$lt": index}})
+    memos = [ResponseMemo(**memo)
+             async for memo in memos.find(condition)
+                                    .sort("index", DESCENDING)
+                                    .limit(limit)]
 
     return MemosResponse(
         data=memos,
@@ -200,6 +224,6 @@ async def post_memos(
     await memos.insert_one(new_memo.model_dump())
 
     return MemoResponse(
-        data=new_memo,
+        data=ResponseMemo(**new_memo.model_dump()),
         meta=Meta(message="Memo successfully created.")
     )
