@@ -28,7 +28,6 @@ get all memos
 ### POST `/walls/{id}/memos/`
 ```json
 {
-    "name": "meow",
     "content": "meow"
 }
 ```
@@ -36,7 +35,6 @@ get all memos
 ```json
 {
     "id": "meow",
-    "name": "meow",
     "contents": "meow",
     "after": "id_of_another_memo"
 }
