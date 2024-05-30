@@ -1,6 +1,7 @@
 from .api import router as api
 from .db import db_connect
-from fastapi import FastAPI
+from .logger import logger
+from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -13,6 +14,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.middleware("http")
+async def log_middleware(request: Request, call_next):
+    logger.debug("%s: %s", request.method, request.headers)
+    response = await call_next(request)
+    return response
+
 
 app.add_middleware(
     CORSMiddleware,
