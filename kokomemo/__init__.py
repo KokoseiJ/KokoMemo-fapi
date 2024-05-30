@@ -20,6 +20,7 @@ app = FastAPI(lifespan=lifespan)
 async def log_middleware(request: Request, call_next):
     logger.debug("%s: %s", request.method, request.headers)
     response = await call_next(request)
+    logger.debug("%s: %s", response.status_code, response.headers)
     return response
 
 

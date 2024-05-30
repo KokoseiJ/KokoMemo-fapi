@@ -85,7 +85,7 @@ def is_valid_wallid(
     return wall_id
 
 
-@router.get("/")
+@router.get("")
 def get_walls(
     login: Annotated[LoginInfo, Depends(check_user)]
 ) -> WallsResponse:
@@ -97,7 +97,7 @@ def get_walls(
     )
 
 
-@router.post("/")
+@router.post("")
 async def post_walls(
     login: Annotated[LoginInfo, Depends(check_user)],
     users: Annotated[Collection, Depends(collection_depends("users"))],
@@ -121,7 +121,7 @@ async def post_walls(
     )
 
 
-@router.put("/")
+@router.put("")
 async def edit_walls(
     login: Annotated[LoginInfo, Depends(check_user)],
     users: Annotated[Collection, Depends(collection_depends("users"))],
