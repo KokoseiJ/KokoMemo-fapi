@@ -89,7 +89,7 @@ def is_valid_wallid(
 def get_walls(
     login: Annotated[LoginInfo, Depends(check_user)]
 ) -> WallsResponse:
-    walls = login.user.walls
+    walls = login.user.walls[::-1]
 
     return WallsResponse(
         data=walls,
@@ -159,7 +159,7 @@ async def delete_walls(
 ) -> BaseResponse:
     await users.update_one(
         {"id": login.user.id},
-        {"$pull": {"walls": {"id": id}}}
+        {"$pull": {"walls": {"id": wall_id}}}
     )
 
     return BaseResponse(
@@ -167,7 +167,7 @@ async def delete_walls(
     )
 
 
-@router.get("/walls/{wall_id}/memos")
+@router.get("/{wall_id}/memos")
 async def get_memos(
     wall_id: Annotated[str, Depends(is_valid_wallid)],
     login: Annotated[LoginInfo, Depends(check_user)],
@@ -195,7 +195,7 @@ async def get_memos(
     )
 
 
-@router.post("/walls/{wall_id}/memos")
+@router.post("/{wall_id}/memos")
 async def post_memos(
     wall_id: Annotated[str, Depends(is_valid_wallid)],
     login: Annotated[LoginInfo, Depends(check_user)],
@@ -228,7 +228,7 @@ async def post_memos(
     )
 
 
-@router.put("/walls/{wall_id}/memos")
+@router.put("/{wall_id}/memos")
 async def edit_memo(
     wall_id: Annotated[str, Depends(is_valid_wallid)],
     login: Annotated[LoginInfo, Depends(check_user)],
@@ -254,7 +254,7 @@ async def edit_memo(
     )
 
 
-@router.delete("/walls/{wall_id}/memos/{memo_id}")
+@router.delete("/{wall_id}/memos/{memo_id}")
 async def delete_memo(
     wall_id: Annotated[str, Depends(is_valid_wallid)],
     memo_id: str,
