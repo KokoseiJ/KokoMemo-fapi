@@ -110,7 +110,7 @@ async def google_login(
             return_document=ReturnDocument.AFTER
         )
 
-        user = User(**user_data)
+        user = User(**user_data) if user_data is not None else None
 
     if not user:
         logger.debug(
