@@ -17,7 +17,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://memo.kokoseij.xyz",
+        "https://kokoseij.github.io",
         "http://localhost:5173"
     ],
     allow_credentials=True,
